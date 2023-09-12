@@ -19,7 +19,7 @@ int main()
 
 	int status;
 	addrinfo hints;
-	addrinfo* servInfo;
+	addrinfo* info;
 	memset(&hints, 0, sizeof(hints));
 
 	char ipstr[INET6_ADDRSTRLEN];
@@ -28,7 +28,7 @@ int main()
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags = AI_PASSIVE;
 
-	status = getaddrinfo("www.youtube.com", NULL, &hints, &servInfo);
+	status = getaddrinfo("www.example.com", "http", &hints, &info);
 
 	if (status != 0)
 	{
@@ -36,7 +36,7 @@ int main()
 		return -1;
 	}
 
-	for (addrinfo* p = servInfo; p != nullptr; p = p->ai_next)
+	for (addrinfo* p = info; p != nullptr; p = p->ai_next)
 	{
 		void* addr;
 		char* ipVer;
@@ -57,6 +57,21 @@ int main()
 		inet_ntop(p->ai_family, addr, ipstr, sizeof(ipstr));
 		std::cout << ipVer << ": " << ipstr << std::endl;
 	}
+
+	SOCKET sock_fd = socket(info->ai_family, info->ai_socktype, info->ai_protocol);
+	if (sock_fd == -1)
+	{
+		std::cerr << "Failed to create a socket!" << std::endl;
+		return -1;
+	}
+
+	if (connect(sock_fd, info->ai_addr, (int)info->ai_addrlen))
+	{
+		std::cerr << "Failed to connect to a socket!" << " Error: " << WSAGetLastError() << std::endl;
+		return -1;
+	}
+
+	freeaddrinfo(info);
 
 	WSACleanup();
 }
